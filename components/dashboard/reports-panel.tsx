@@ -1,12 +1,14 @@
 import { BarChart3 } from "lucide-react";
 
-const reportRows = [
-  { label: "Eng foydali kategoriya", value: "Ichimlik", sub: "1.9 mln so'm foyda" },
-  { label: "Kam qolgan tovarlar", value: "2 ta", sub: "Un 5kg, Shakar 1kg" },
-  { label: "Naqd ulushi", value: "41%", sub: "Karta va Click bilan birga" },
-];
+type ReportsPanelProps = {
+  rows: Array<{
+    label: string;
+    value: string;
+    sub: string;
+  }>;
+};
 
-export function ReportsPanel() {
+export function ReportsPanel({ rows }: ReportsPanelProps) {
   return (
     <section className="rounded-lg border border-[#dfe4dc] bg-white p-4">
       <div className="flex items-start justify-between gap-3">
@@ -17,7 +19,7 @@ export function ReportsPanel() {
         <BarChart3 className="h-5 w-5 text-[#69756c]" />
       </div>
       <div className="mt-4 space-y-3">
-        {reportRows.map((row) => (
+        {rows.map((row) => (
           <div key={row.label} className="rounded-lg bg-[#f6f8f5] p-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-[#69756c]">{row.label}</p>

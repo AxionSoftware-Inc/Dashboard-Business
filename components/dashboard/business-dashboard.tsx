@@ -25,7 +25,8 @@ import {
   apiClient,
 } from "@/lib/api-client";
 import { clearActiveBusinessId, getActiveBusiness, setActiveBusinessId } from "@/lib/business-context";
-import { quickActions, templates } from "@/lib/mock-data";
+import { templates } from "@/lib/mock-data";
+import { getTemplateConfig } from "@/lib/template-config";
 import type {
   BusinessProfile,
   CashflowItem,
@@ -34,6 +35,7 @@ import type {
   OperationDraft,
   OperationType,
   Product,
+  QuickAction,
   TemplateKey,
   Transaction,
 } from "@/lib/types";
@@ -77,6 +79,7 @@ export function BusinessDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isOperationOpen, setIsOperationOpen] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("Savdo");
+  const [operationPreset, setOperationPreset] = useState<QuickAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [isSetupMode, setIsSetupMode] = useState(false);
 
@@ -85,6 +88,7 @@ export function BusinessDashboard() {
     () => templates.find((template) => template.key === activeTemplateKey) ?? templates[0],
     [activeTemplateKey],
   );
+  const templateConfig = useMemo(() => getTemplateConfig(activeTemplateKey), [activeTemplateKey]);
 
   const totals = useMemo(() => mapSummaryToTotals(summary, business), [business, summary]);
   const cashflow = useMemo(() => mapSummaryToCashflow(summary), [summary]);
@@ -171,8 +175,9 @@ export function BusinessDashboard() {
     }
   }
 
-  function openOperation(type: OperationType = "Savdo") {
+  function openOperation(type: OperationType = "Savdo", action?: QuickAction) {
     setOperationType(type);
+    setOperationPreset(action ?? null);
     setIsOperationOpen(true);
   }
 
@@ -185,6 +190,21 @@ export function BusinessDashboard() {
     setDebtItems([]);
     setSelectedTemplateKey(null);
     setIsSetupMode(true);
+  }
+
+  async function changeTemplate(templateKey: TemplateKey) {
+    setSelectedTemplateKey(templateKey);
+    if (!business) {
+      return;
+    }
+
+    try {
+      const updated = await apiClient.updateBusiness(business.id, { template: templateKey });
+      setBusiness(updated);
+      setToast("Template yangilandi");
+    } catch {
+      setError("Template saqlanmadi. Qayta urinib ko'ring.");
+    }
   }
 
   async function saveOperation(operation: OperationDraft) {
@@ -237,7 +257,7 @@ export function BusinessDashboard() {
 
       <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
         <section className="space-y-5">
-          <TemplatePicker templates={templates} activeKey={activeTemplateKey} onSelect={setSelectedTemplateKey} />
+          <TemplatePicker templates={templates} activeKey={activeTemplateKey} onSelect={(key) => void changeTemplate(key)} />
           <MetricsGrid totals={totals} />
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -250,17 +270,18 @@ export function BusinessDashboard() {
 
         <aside className="space-y-5">
           <SummaryPanel totals={totals} />
-          <QuickActions actions={quickActions} onCreateOperation={openOperation} />
+          <QuickActions actions={templateConfig.quickActions} onCreateOperation={openOperation} />
           <DebtPanel debts={debtItems} />
-          <ReportsPanel />
-          <ActionPlan />
+          <ReportsPanel rows={templateConfig.reportSignals} />
+          <ActionPlan steps={templateConfig.nextSteps} />
         </aside>
       </div>
 
       <OperationDrawer
-        key={`${operationType}-${isOperationOpen ? "open" : "closed"}`}
+        key={`${operationType}-${operationPreset?.label ?? "manual"}-${isOperationOpen ? "open" : "closed"}`}
         isOpen={isOperationOpen}
         initialType={operationType}
+        preset={operationPreset}
         onClose={() => setIsOperationOpen(false)}
         onSave={saveOperation}
       />

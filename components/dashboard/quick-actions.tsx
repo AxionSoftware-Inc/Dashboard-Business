@@ -3,7 +3,7 @@ import type { OperationType, QuickAction } from "@/lib/types";
 
 type QuickActionsProps = {
   actions: QuickAction[];
-  onCreateOperation: (type: OperationType) => void;
+  onCreateOperation: (type: OperationType, action?: QuickAction) => void;
 };
 
 export function QuickActions({ actions, onCreateOperation }: QuickActionsProps) {
@@ -26,7 +26,7 @@ export function QuickActions({ actions, onCreateOperation }: QuickActionsProps) 
         {actions.map((action) => (
           <button
             key={action.label}
-            onClick={() => onCreateOperation(action.type)}
+            onClick={() => onCreateOperation(action.type, action)}
             className="rounded-lg border border-[#e5e9e2] p-3 text-left hover:border-[#aeb9ad] hover:bg-[#fbfcfa]"
           >
             <p className="text-sm font-semibold text-[#17201b]">{action.label}</p>

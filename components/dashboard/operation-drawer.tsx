@@ -3,11 +3,12 @@
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatMoney } from "@/lib/format";
-import type { OperationDraft, OperationType } from "@/lib/types";
+import type { OperationDraft, OperationType, QuickAction } from "@/lib/types";
 
 type OperationDrawerProps = {
   isOpen: boolean;
   initialType: OperationType;
+  preset?: QuickAction | null;
   onClose: () => void;
   onSave: (operation: OperationDraft) => Promise<void> | void;
 };
@@ -26,13 +27,13 @@ const operationTypes: OperationType[] = ["Savdo", "Kirim", "Chiqim", "Qarz", "Om
 const methods = ["Naqd", "Karta", "Click", "Payme", "Bank"];
 const links = ["Ombor", "Qarz daftari", "Xarajat", "Tannarx", "Kassa"];
 
-export function OperationDrawer({ isOpen, initialType, onClose, onSave }: OperationDrawerProps) {
+export function OperationDrawer({ isOpen, initialType, preset, onClose, onSave }: OperationDrawerProps) {
   const [form, setForm] = useState<OperationForm>({
     type: initialType,
-    title: "",
+    title: preset?.defaultTitle ?? "",
     amount: "",
     method: "Naqd",
-    link: "Kassa",
+    link: preset?.defaultLink ?? "Kassa",
     date: "Bugun",
     note: "",
   });

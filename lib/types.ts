@@ -63,6 +63,8 @@ export type QuickAction = {
   label: string;
   value: string;
   type: OperationType;
+  defaultTitle?: string;
+  defaultLink?: string;
 };
 
 export type BusinessProfile = {

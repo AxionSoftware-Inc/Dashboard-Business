@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Minus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/pages/page-header";
@@ -17,6 +17,7 @@ export function ProductsPage() {
   const [query, setQuery] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low">("all");
   const [form, setForm] = useState({ name: "", category: "", stock: "", minStock: "", salePrice: "", costPrice: "" });
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const filteredProducts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -50,7 +51,7 @@ export function ProductsPage() {
       return;
     }
 
-    const created = await apiClient.createProduct({
+    const payload = {
       business: business.id,
       name: form.name.trim(),
       category: form.category.trim(),
@@ -59,16 +60,37 @@ export function ProductsPage() {
       sale_price: form.salePrice || "0",
       cost_price: form.costPrice || "0",
       unit: "dona",
-    });
-    setProducts((current) => [created, ...current]);
+    };
+
+    const saved = editingId ? await apiClient.updateProduct(editingId, payload) : await apiClient.createProduct(payload);
+    setProducts((current) => (editingId ? current.map((product) => (product.id === editingId ? saved : product)) : [saved, ...current]));
     setForm({ name: "", category: "", stock: "", minStock: "", salePrice: "", costPrice: "" });
-    setToast("Mahsulot qo'shildi");
+    setEditingId(null);
+    setToast(editingId ? "Mahsulot yangilandi" : "Mahsulot qo'shildi");
+  }
+
+  function startEdit(product: ApiProduct) {
+    setEditingId(product.id);
+    setForm({
+      name: product.name,
+      category: product.category,
+      stock: product.stock,
+      minStock: product.min_stock,
+      salePrice: product.sale_price,
+      costPrice: product.cost_price,
+    });
   }
 
   async function deleteProduct(id: number) {
     await apiClient.deleteProduct(id);
     setProducts((current) => current.filter((product) => product.id !== id));
     setToast("Mahsulot o'chirildi");
+  }
+
+  async function adjustStock(product: ApiProduct, delta: number) {
+    const updated = await apiClient.adjustProductStock(product.id, String(delta));
+    setProducts((current) => current.map((item) => (item.id === product.id ? updated : item)));
+    setToast(delta > 0 ? "Qoldiq oshirildi" : "Qoldiq kamaytirildi");
   }
 
   if (isLoading) {
@@ -84,7 +106,7 @@ export function ProductsPage() {
       <PageHeader eyebrow={business?.name ?? "Business Dashboard"} title="Ombor va mahsulotlar" />
       <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[360px_1fr] lg:px-8">
         <section className="rounded-lg border border-[#dfe4dc] bg-white p-4">
-          <h2 className="text-lg font-semibold">Mahsulot qo&apos;shish</h2>
+          <h2 className="text-lg font-semibold">{editingId ? "Mahsulotni tahrirlash" : "Mahsulot qo'shish"}</h2>
           <div className="mt-4 grid gap-3">
             <Input label="Nomi" value={form.name} onChange={(value) => setForm((current) => ({ ...current, name: value }))} />
             <Input label="Kategoriya" value={form.category} onChange={(value) => setForm((current) => ({ ...current, category: value }))} />
@@ -98,8 +120,19 @@ export function ProductsPage() {
             </div>
             <button onClick={addProduct} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white">
               <Plus className="h-4 w-4" />
-              Saqlash
+              {editingId ? "Yangilash" : "Saqlash"}
             </button>
+            {editingId ? (
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setForm({ name: "", category: "", stock: "", minStock: "", salePrice: "", costPrice: "" });
+                }}
+                className="h-10 rounded-lg border border-[#d9dfd6] px-4 text-sm font-medium hover:bg-[#f6f8f5]"
+              >
+                Bekor qilish
+              </button>
+            ) : null}
           </div>
         </section>
 
@@ -126,7 +159,7 @@ export function ProductsPage() {
           ) : (
             <div className="divide-y divide-[#edf0eb]">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="grid gap-3 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                <div key={product.id} className="grid gap-3 p-4 sm:grid-cols-[1fr_auto_auto_auto_auto_auto] sm:items-center">
                   <div>
                     <h3 className="font-medium">{product.name}</h3>
                     <p className="mt-1 text-sm text-[#69756c]">{product.category || "Kategoriya yo'q"} / SKU: {product.sku || "-"}</p>
@@ -138,6 +171,15 @@ export function ProductsPage() {
                   </div>
                   <button onClick={() => void deleteProduct(product.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-rose-700 hover:bg-rose-50" aria-label="Mahsulotni o'chirish">
                     <Trash2 className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => startEdit(product)} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#69756c] hover:bg-[#f0f3ef]" aria-label="Mahsulotni tahrirlash">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => void adjustStock(product, 1)} className="flex h-9 w-9 items-center justify-center rounded-lg text-emerald-700 hover:bg-emerald-50" aria-label="Qoldiqni oshirish">
+                    <Plus className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => void adjustStock(product, -1)} className="flex h-9 w-9 items-center justify-center rounded-lg text-amber-700 hover:bg-amber-50" aria-label="Qoldiqni kamaytirish">
+                    <Minus className="h-4 w-4" />
                   </button>
                 </div>
               ))}

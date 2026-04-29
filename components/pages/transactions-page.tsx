@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { OperationDrawer } from "@/components/dashboard/operation-drawer";
@@ -29,6 +29,8 @@ export function TransactionsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"all" | ApiTransaction["type"]>("all");
+  const [editing, setEditing] = useState<ApiTransaction | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", amount: "", paymentMethod: "", linkedTo: "" });
 
   const filteredTransactions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -88,6 +90,32 @@ export function TransactionsPage() {
     setToast("Operatsiya o'chirildi");
   }
 
+  function startEdit(item: ApiTransaction) {
+    setEditing(item);
+    setEditForm({
+      title: item.title,
+      amount: item.amount,
+      paymentMethod: item.payment_method,
+      linkedTo: item.linked_to,
+    });
+  }
+
+  async function saveEdit() {
+    if (!editing) {
+      return;
+    }
+
+    const updated = await apiClient.updateTransaction(editing.id, {
+      title: editForm.title,
+      amount: editForm.amount,
+      payment_method: editForm.paymentMethod,
+      linked_to: editForm.linkedTo,
+    });
+    setTransactions((current) => current.map((item) => (item.id === editing.id ? updated : item)));
+    setEditing(null);
+    setToast("Operatsiya yangilandi");
+  }
+
   if (isLoading) {
     return <PageLoading />;
   }
@@ -109,6 +137,21 @@ export function TransactionsPage() {
         }
       />
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        {editing ? (
+          <section className="mb-5 rounded-lg border border-[#dfe4dc] bg-white p-4">
+            <h2 className="text-lg font-semibold">Operatsiyani tahrirlash</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-4">
+              <Input label="Nomi" value={editForm.title} onChange={(value) => setEditForm((current) => ({ ...current, title: value }))} />
+              <Input label="Summa" value={editForm.amount} onChange={(value) => setEditForm((current) => ({ ...current, amount: value }))} />
+              <Input label="To'lov" value={editForm.paymentMethod} onChange={(value) => setEditForm((current) => ({ ...current, paymentMethod: value }))} />
+              <Input label="Bog'lash" value={editForm.linkedTo} onChange={(value) => setEditForm((current) => ({ ...current, linkedTo: value }))} />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button onClick={saveEdit} className="h-10 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white">Saqlash</button>
+              <button onClick={() => setEditing(null)} className="h-10 rounded-lg border border-[#d9dfd6] px-4 text-sm font-medium">Bekor qilish</button>
+            </div>
+          </section>
+        ) : null}
         <section className="rounded-lg border border-[#dfe4dc] bg-white">
           <div className="flex flex-col gap-3 border-b border-[#e5e9e2] p-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -137,7 +180,7 @@ export function TransactionsPage() {
           ) : (
             <div className="divide-y divide-[#edf0eb]">
               {filteredTransactions.map((item) => (
-                <div key={item.id} className="grid gap-3 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                <div key={item.id} className="grid gap-3 p-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-medium">{item.title}</h3>
@@ -149,6 +192,9 @@ export function TransactionsPage() {
                   <button onClick={() => void deleteTransaction(item.id)} className="flex h-9 w-9 items-center justify-center rounded-lg text-rose-700 hover:bg-rose-50" aria-label="Operatsiyani o'chirish">
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  <button onClick={() => startEdit(item)} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#69756c] hover:bg-[#f0f3ef]" aria-label="Operatsiyani tahrirlash">
+                    <Pencil className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -158,5 +204,14 @@ export function TransactionsPage() {
       <OperationDrawer key={`${operationType}-${isDrawerOpen}`} isOpen={isDrawerOpen} initialType={operationType} onClose={() => setIsDrawerOpen(false)} onSave={saveOperation} />
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
     </AppShell>
+  );
+}
+
+function Input({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-medium text-[#263027]">{label}</span>
+      <input value={value} onChange={(event) => onChange(event.target.value)} className="h-10 rounded-lg border border-[#d9dfd6] px-3 text-sm outline-none focus:border-[#17201b] focus:ring-2 focus:ring-[#dbe8dc]" />
+    </label>
   );
 }

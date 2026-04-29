@@ -18,6 +18,7 @@ export function DebtsPage() {
   const [query, setQuery] = useState("");
   const [direction, setDirection] = useState<"all" | ApiDebt["direction"]>("all");
   const [form, setForm] = useState({ name: "", amount: "", direction: "receivable" as ApiDebt["direction"] });
+  const [paymentForm, setPaymentForm] = useState({ debtId: 0, amount: "" });
 
   const filteredDebts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -73,6 +74,25 @@ export function DebtsPage() {
     setToast("Qarz o'chirildi");
   }
 
+  async function applyPartialPayment() {
+    const debt = debts.find((item) => item.id === paymentForm.debtId);
+    const payment = Number(paymentForm.amount.replace(/\s/g, ""));
+
+    if (!debt || !payment || payment <= 0) {
+      setToast("Qarz va to'lov summasini tanlang");
+      return;
+    }
+
+    const nextAmount = Math.max(0, Number(debt.amount) - payment);
+    const updated = await apiClient.updateDebt(debt.id, {
+      amount: String(nextAmount),
+      is_closed: nextAmount === 0,
+    });
+    setDebts((current) => current.map((item) => (item.id === debt.id ? updated : item)).filter((item) => !item.is_closed));
+    setPaymentForm({ debtId: 0, amount: "" });
+    setToast(nextAmount === 0 ? "Qarz to'liq yopildi" : "Qisman to'lov yozildi");
+  }
+
   if (isLoading) {
     return <PageLoading />;
   }
@@ -98,6 +118,21 @@ export function DebtsPage() {
               <Plus className="h-4 w-4" />
               Saqlash
             </button>
+          </div>
+          <div className="mt-5 border-t border-[#e5e9e2] pt-4">
+            <h3 className="font-semibold">Qisman to&apos;lov</h3>
+            <div className="mt-3 grid gap-3">
+              <select value={paymentForm.debtId} onChange={(event) => setPaymentForm((current) => ({ ...current, debtId: Number(event.target.value) }))} className="h-10 rounded-lg border border-[#d9dfd6] bg-white px-3 text-sm">
+                <option value={0}>Qarzni tanlang</option>
+                {debts.map((debt) => (
+                  <option key={debt.id} value={debt.id}>{debt.contact_name} - {formatMoney(Number(debt.amount))}</option>
+                ))}
+              </select>
+              <Input label="To'lov summasi" value={paymentForm.amount} onChange={(value) => setPaymentForm((current) => ({ ...current, amount: value }))} />
+              <button onClick={applyPartialPayment} className="h-10 rounded-lg border border-[#d9dfd6] px-4 text-sm font-medium hover:bg-[#f6f8f5]">
+                Qisman yopish
+              </button>
+            </div>
           </div>
         </section>
         <section className="rounded-lg border border-[#dfe4dc] bg-white">

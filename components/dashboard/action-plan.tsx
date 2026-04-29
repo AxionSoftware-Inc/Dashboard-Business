@@ -1,8 +1,10 @@
 import { FileSpreadsheet } from "lucide-react";
 
-const steps = ["DB va login", "Operatsiya formasi", "Excel import", "Telegram eslatma"];
+type ActionPlanProps = {
+  steps: string[];
+};
 
-export function ActionPlan() {
+export function ActionPlan({ steps }: ActionPlanProps) {
   return (
     <section className="rounded-lg border border-[#dfe4dc] bg-[#17201b] p-4 text-white">
       <div className="flex items-start justify-between gap-3">

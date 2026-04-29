@@ -115,6 +115,7 @@ export type ApiDashboardSummary = {
   payable: number;
   transactions_count: number;
   open_debts_count: number;
+  by_type: Record<string, number>;
 };
 
 export type AuthTokens = {
@@ -174,6 +175,11 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  updateBusiness: (businessId: number, payload: Partial<CreateBusinessPayload>) =>
+    request<ApiBusiness>(`/businesses/${businessId}/`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   publicBusinesses: () => request<PaginatedResponse<ApiBusiness>>("/businesses/"),
   products: (businessId: number) => request<PaginatedResponse<ApiProduct>>(`/products/?business=${businessId}`),
   createProduct: (payload: CreateProductPayload) =>
@@ -190,10 +196,20 @@ export const apiClient = {
     request<void>(`/products/${id}/`, {
       method: "DELETE",
     }),
+  adjustProductStock: (id: number, delta: string) =>
+    request<ApiProduct>(`/products/${id}/adjust_stock/`, {
+      method: "POST",
+      body: JSON.stringify({ delta }),
+    }),
   transactions: (businessId: number) => request<PaginatedResponse<ApiTransaction>>(`/transactions/?business=${businessId}`),
   createTransaction: (payload: CreateTransactionPayload) =>
     request<ApiTransaction>("/transactions/", {
       method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateTransaction: (id: number, payload: Partial<CreateTransactionPayload>) =>
+    request<ApiTransaction>(`/transactions/${id}/`, {
+      method: "PATCH",
       body: JSON.stringify(payload),
     }),
   deleteTransaction: (id: number) =>
@@ -215,5 +231,14 @@ export const apiClient = {
     request<void>(`/debts/${id}/`, {
       method: "DELETE",
     }),
-  dashboardSummary: (businessId: number) => request<ApiDashboardSummary>(`/reports/dashboard/summary/?business=${businessId}`),
+  dashboardSummary: (businessId: number, params?: { dateFrom?: string; dateTo?: string }) => {
+    const searchParams = new URLSearchParams({ business: String(businessId) });
+    if (params?.dateFrom) {
+      searchParams.set("date_from", params.dateFrom);
+    }
+    if (params?.dateTo) {
+      searchParams.set("date_to", params.dateTo);
+    }
+    return request<ApiDashboardSummary>(`/reports/dashboard/summary/?${searchParams.toString()}`);
+  },
 };
