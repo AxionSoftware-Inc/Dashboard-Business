@@ -22,13 +22,13 @@ export function SetupPage() {
         owner_name: profile.ownerName.trim(),
         template: profile.templateKey,
         currency: "UZS",
-        starting_cash: profile.startingCash.replace(/\s/g, "") || "0",
+        starting_cash: normalizeMoney(profile.startingCash),
         payment_methods: profile.paymentMethods,
       });
       router.replace("/dashboard");
       router.refresh();
-    } catch {
-      setError("Biznes yaratilmadi. Backend bilan aloqa yoki forma ma'lumotlarini tekshiring.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message.replace("API request failed: ", "") : "Biznes yaratilmadi.");
       setIsSaving(false);
     }
   }
@@ -36,7 +36,12 @@ export function SetupPage() {
   return (
     <>
       <Onboarding onComplete={completeOnboarding} isSaving={isSaving} />
-      {error ? <Toast message={error} onClose={() => setError(null)} /> : null}
+      {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
     </>
   );
+}
+
+function normalizeMoney(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits || "0";
 }

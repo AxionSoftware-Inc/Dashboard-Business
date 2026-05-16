@@ -214,7 +214,7 @@ export function BusinessDashboard() {
     return (
       <>
         <NoBusinessState />
-        {error ? <Toast message={error} onClose={() => setError(null)} /> : null}
+        {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
       </>
     );
   }
@@ -258,7 +258,7 @@ export function BusinessDashboard() {
         onSave={saveOperation}
       />
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
-      {error ? <Toast message={error} onClose={() => setError(null)} /> : null}
+      {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
     </AppShell>
   );
 }

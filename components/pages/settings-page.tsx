@@ -101,7 +101,7 @@ export function SettingsPage() {
         name: form.name.trim(),
         owner_name: form.ownerName.trim(),
         template: form.template,
-        starting_cash: form.startingCash.replace(/\s/g, "") || "0",
+        starting_cash: normalizeMoney(form.startingCash),
         payment_methods: form.paymentMethods,
       });
       setBusiness(updated);
@@ -220,4 +220,9 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="font-medium text-[#17201b]">{value}</dd>
     </div>
   );
+}
+
+function normalizeMoney(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits || "0";
 }
