@@ -136,7 +136,8 @@ type RequestOptions = RequestInit & {
 
 async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
   const { token, headers, ...requestInit } = init;
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const normalizedPath = path.length > 1 ? path.replace(/\/(?=\?|$)/, "") : path;
+  const response = await fetch(`${apiBaseUrl}${normalizedPath}`, {
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
