@@ -8,11 +8,12 @@ import type { BusinessProfile, TemplateKey } from "@/lib/types";
 
 type OnboardingProps = {
   onComplete: (profile: BusinessProfile) => void;
+  isSaving?: boolean;
 };
 
 const paymentOptions = ["Naqd", "Karta", "Click", "Payme", "Bank"];
 
-export function Onboarding({ onComplete }: OnboardingProps) {
+export function Onboarding({ onComplete, isSaving = false }: OnboardingProps) {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<BusinessProfile>({
     businessName: "",
@@ -144,7 +145,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   <p className="text-sm text-white/70">Tayyor bo&apos;lganda</p>
                   <h2 className="mt-2 text-lg font-semibold">{profile.businessName || "Biznes nomi"}</h2>
                   <p className="mt-2 text-sm text-white/70">
-                    Dashboard demo ma&apos;lumot bilan ochiladi. Keyin real backend ulanganda shu oqim saqlanadi.
+                    Biznes backendga saqlanadi va keyingi ekranda aynan shu biznes dashboardi ochiladi.
                   </p>
                 </div>
               </div>
@@ -161,10 +162,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </button>
             <button
               onClick={() => (step === 3 ? onComplete(profile) : setStep((current) => current + 1))}
-              disabled={!canContinue}
+              disabled={!canContinue || isSaving}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white hover:bg-[#28332c] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {step === 3 ? "Dashboardni ochish" : "Davom etish"}
+              {isSaving ? "Saqlanmoqda..." : step === 3 ? "Dashboardni ochish" : "Davom etish"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/pages/page-header";
 import { NoBusinessState, PageLoading } from "@/components/pages/page-state";
 import { Toast } from "@/components/ui/toast";
 import { apiClient, type ApiBusiness } from "@/lib/api-client";
-import { clearActiveBusinessId, getActiveBusiness, setActiveBusinessId } from "@/lib/business-context";
+import { clearActiveBusinessId, getActiveBusiness, switchActiveBusiness } from "@/lib/business-context";
 import { templates } from "@/lib/mock-data";
 
 const paymentOptions = ["Naqd", "Karta", "Click", "Payme", "Bank"];
@@ -15,6 +15,7 @@ export function SettingsPage() {
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [businesses, setBusinesses] = useState<ApiBusiness[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -25,39 +26,50 @@ export function SettingsPage() {
   });
 
   const load = useCallback(async () => {
-    const activeBusiness = await getActiveBusiness();
-    const allBusinesses = await apiClient.publicBusinesses();
-    setBusinesses(allBusinesses.results);
-    setBusiness(activeBusiness);
-    if (activeBusiness) {
-      setForm({
-        name: activeBusiness.name,
-        ownerName: activeBusiness.owner_name,
-        template: activeBusiness.template,
-        startingCash: activeBusiness.starting_cash,
-        paymentMethods: activeBusiness.payment_methods,
-      });
+    try {
+      const activeBusiness = await getActiveBusiness();
+      const allBusinesses = await apiClient.publicBusinesses();
+      setBusinesses(allBusinesses.results);
+      setBusiness(activeBusiness);
+      if (activeBusiness) {
+        setForm({
+          name: activeBusiness.name,
+          ownerName: activeBusiness.owner_name,
+          template: activeBusiness.template,
+          startingCash: activeBusiness.starting_cash,
+          paymentMethods: activeBusiness.payment_methods,
+        });
+      }
+    } catch {
+      setToast("Sozlamalar yuklanmadi");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   async function switchBusiness(businessId: number) {
-    setActiveBusinessId(businessId);
-    const nextBusiness = await apiClient.business(businessId);
-    setBusiness(nextBusiness);
-    setForm({
-      name: nextBusiness.name,
-      ownerName: nextBusiness.owner_name,
-      template: nextBusiness.template,
-      startingCash: nextBusiness.starting_cash,
-      paymentMethods: nextBusiness.payment_methods,
-    });
-    setToast("Active biznes almashtirildi");
+    try {
+      const nextBusiness = await switchActiveBusiness(businessId);
+      if (!nextBusiness) {
+        return;
+      }
+      setBusiness(nextBusiness);
+      setForm({
+        name: nextBusiness.name,
+        ownerName: nextBusiness.owner_name,
+        template: nextBusiness.template,
+        startingCash: nextBusiness.starting_cash,
+        paymentMethods: nextBusiness.payment_methods,
+      });
+      setToast("Active biznes almashtirildi");
+    } catch {
+      setToast("Biznes almashtirilmadi");
+    }
   }
 
   function startNewBusiness() {
     clearActiveBusinessId();
-    window.location.href = "/dashboard?setup=1";
+    window.location.href = "/setup";
   }
 
   useEffect(() => {
@@ -83,15 +95,22 @@ export function SettingsPage() {
       return;
     }
 
-    const updated = await apiClient.updateBusiness(business.id, {
-      name: form.name.trim(),
-      owner_name: form.ownerName.trim(),
-      template: form.template,
-      starting_cash: form.startingCash.replace(/\s/g, "") || "0",
-      payment_methods: form.paymentMethods,
-    });
-    setBusiness(updated);
-    setToast("Sozlamalar saqlandi");
+    setIsSaving(true);
+    try {
+      const updated = await apiClient.updateBusiness(business.id, {
+        name: form.name.trim(),
+        owner_name: form.ownerName.trim(),
+        template: form.template,
+        starting_cash: form.startingCash.replace(/\s/g, "") || "0",
+        payment_methods: form.paymentMethods,
+      });
+      setBusiness(updated);
+      setToast("Sozlamalar saqlandi");
+    } catch {
+      setToast("Sozlamalar saqlanmadi");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   if (isLoading) {
@@ -143,8 +162,8 @@ export function SettingsPage() {
                 })}
               </div>
             </div>
-            <button onClick={saveSettings} className="h-10 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white">
-              Saqlash
+            <button onClick={saveSettings} disabled={isSaving} className="h-10 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60">
+              {isSaving ? "Saqlanmoqda" : "Saqlash"}
             </button>
           </div>
         </section>

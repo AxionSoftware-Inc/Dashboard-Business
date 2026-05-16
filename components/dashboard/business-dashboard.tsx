@@ -6,7 +6,6 @@ import { ActionPlan } from "@/components/dashboard/action-plan";
 import { DebtPanel } from "@/components/dashboard/debt-panel";
 import { InventoryPanel } from "@/components/dashboard/inventory-panel";
 import { MetricsGrid } from "@/components/dashboard/metrics-grid";
-import { Onboarding } from "@/components/dashboard/onboarding";
 import { OperationDrawer } from "@/components/dashboard/operation-drawer";
 import { ProfitFormula } from "@/components/dashboard/profit-formula";
 import { QuickActions } from "@/components/dashboard/quick-actions";
@@ -15,6 +14,7 @@ import { SummaryPanel } from "@/components/dashboard/summary-panel";
 import { TemplatePicker } from "@/components/dashboard/template-picker";
 import { TopBar } from "@/components/dashboard/top-bar";
 import { TransactionJournal } from "@/components/dashboard/transaction-journal";
+import { NoBusinessState } from "@/components/pages/page-state";
 import { Toast } from "@/components/ui/toast";
 import {
   type ApiBusiness,
@@ -24,11 +24,10 @@ import {
   type ApiTransaction,
   apiClient,
 } from "@/lib/api-client";
-import { clearActiveBusinessId, getActiveBusiness, setActiveBusinessId } from "@/lib/business-context";
+import { clearActiveBusinessId, getActiveBusiness } from "@/lib/business-context";
 import { templates } from "@/lib/mock-data";
 import { getTemplateConfig } from "@/lib/template-config";
 import type {
-  BusinessProfile,
   CashflowItem,
   DashboardTotals,
   Debt,
@@ -81,7 +80,6 @@ export function BusinessDashboard() {
   const [operationType, setOperationType] = useState<OperationType>("Savdo");
   const [operationPreset, setOperationPreset] = useState<QuickAction | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [isSetupMode, setIsSetupMode] = useState(false);
 
   const activeTemplateKey = selectedTemplateKey ?? normalizeTemplateKey(business?.template) ?? "minimarket";
   const activeTemplate = useMemo(
@@ -113,10 +111,7 @@ export function BusinessDashboard() {
 
     try {
       if (window.location.search.includes("setup=1")) {
-        clearActiveBusinessId();
-        window.history.replaceState(null, "", "/dashboard");
-        setIsSetupMode(true);
-        setBusiness(null);
+        window.location.replace("/setup");
         return;
       }
 
@@ -151,30 +146,6 @@ export function BusinessDashboard() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  async function completeOnboarding(profile: BusinessProfile) {
-    setError(null);
-
-    try {
-      const nextBusiness = await apiClient.createBusiness({
-        name: profile.businessName,
-        owner_name: profile.ownerName,
-        template: profile.templateKey,
-        currency: "UZS",
-        starting_cash: profile.startingCash.replace(/\s/g, "") || "0",
-        payment_methods: profile.paymentMethods,
-      });
-      setActiveBusinessId(nextBusiness.id);
-      setBusiness(nextBusiness);
-      setSelectedTemplateKey(profile.templateKey);
-      await loadBusinessData(nextBusiness.id);
-      window.history.replaceState(null, "", "/dashboard");
-      setIsSetupMode(false);
-      setToast("Biznes yaratildi");
-    } catch {
-      setError("Biznes yaratishda xatolik bo'ldi.");
-    }
-  }
-
   function openOperation(type: OperationType = "Savdo", action?: QuickAction) {
     setOperationType(type);
     setOperationPreset(action ?? null);
@@ -189,7 +160,7 @@ export function BusinessDashboard() {
     setInventoryItems([]);
     setDebtItems([]);
     setSelectedTemplateKey(null);
-    setIsSetupMode(true);
+    window.location.href = "/setup";
   }
 
   async function changeTemplate(templateKey: TemplateKey) {
@@ -222,7 +193,7 @@ export function BusinessDashboard() {
         payment_method: operation.method,
         linked_to: operation.link,
         note: operation.note,
-        happened_at: new Date().toISOString(),
+        happened_at: dateToIso(operation.date),
       });
 
       setJournalItems((current) => [mapApiTransaction(created), ...current]);
@@ -231,6 +202,7 @@ export function BusinessDashboard() {
       setToast(`${operation.title} backendga saqlandi`);
     } catch {
       setError("Operatsiyani saqlashda xatolik bo'ldi.");
+      throw new Error("Operation save failed");
     }
   }
 
@@ -238,10 +210,10 @@ export function BusinessDashboard() {
     return <DashboardLoading />;
   }
 
-  if (!business || isSetupMode) {
+  if (!business) {
     return (
       <>
-        <Onboarding onComplete={completeOnboarding} />
+        <NoBusinessState />
         {error ? <Toast message={error} onClose={() => setError(null)} /> : null}
       </>
     );
@@ -363,6 +335,11 @@ function mapApiDebt(item: ApiDebt): Debt {
     due: item.due_date ? new Date(item.due_date).toLocaleDateString("uz-UZ") : "Muddat yo'q",
     direction: item.direction,
   };
+}
+
+function dateToIso(value: string) {
+  const date = value ? new Date(`${value}T12:00:00`) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
 function DashboardLoading() {

@@ -24,6 +24,7 @@ export function TransactionsPage() {
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("Savdo");
   const [toast, setToast] = useState<string | null>(null);
@@ -46,13 +47,18 @@ export function TransactionsPage() {
   }, [query, transactions, type]);
 
   const load = useCallback(async () => {
-    const activeBusiness = await getActiveBusiness();
-    setBusiness(activeBusiness);
-    if (activeBusiness) {
-      const response = await apiClient.transactions(activeBusiness.id);
-      setTransactions(response.results);
+    try {
+      const activeBusiness = await getActiveBusiness();
+      setBusiness(activeBusiness);
+      if (activeBusiness) {
+        const response = await apiClient.transactions(activeBusiness.id);
+        setTransactions(response.results);
+      }
+    } catch {
+      setToast("Operatsiyalar yuklanmadi");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -70,24 +76,33 @@ export function TransactionsPage() {
       return;
     }
 
-    const created = await apiClient.createTransaction({
-      business: business.id,
-      type: operationTypeMap[operation.type],
-      title: operation.title,
-      amount: String(operation.amount),
-      payment_method: operation.method,
-      linked_to: operation.link,
-      note: operation.note,
-      happened_at: new Date().toISOString(),
-    });
-    setTransactions((current) => [created, ...current]);
-    setToast("Operatsiya saqlandi");
+    try {
+      const created = await apiClient.createTransaction({
+        business: business.id,
+        type: operationTypeMap[operation.type],
+        title: operation.title,
+        amount: String(operation.amount),
+        payment_method: operation.method,
+        linked_to: operation.link,
+        note: operation.note,
+        happened_at: dateToIso(operation.date),
+      });
+      setTransactions((current) => [created, ...current]);
+      setToast("Operatsiya saqlandi");
+    } catch {
+      setToast("Operatsiya saqlanmadi");
+      throw new Error("Operation save failed");
+    }
   }
 
   async function deleteTransaction(id: number) {
-    await apiClient.deleteTransaction(id);
-    setTransactions((current) => current.filter((item) => item.id !== id));
-    setToast("Operatsiya o'chirildi");
+    try {
+      await apiClient.deleteTransaction(id);
+      setTransactions((current) => current.filter((item) => item.id !== id));
+      setToast("Operatsiya o'chirildi");
+    } catch {
+      setToast("Operatsiya o'chirilmadi");
+    }
   }
 
   function startEdit(item: ApiTransaction) {
@@ -105,15 +120,22 @@ export function TransactionsPage() {
       return;
     }
 
-    const updated = await apiClient.updateTransaction(editing.id, {
-      title: editForm.title,
-      amount: editForm.amount,
-      payment_method: editForm.paymentMethod,
-      linked_to: editForm.linkedTo,
-    });
-    setTransactions((current) => current.map((item) => (item.id === editing.id ? updated : item)));
-    setEditing(null);
-    setToast("Operatsiya yangilandi");
+    setIsSaving(true);
+    try {
+      const updated = await apiClient.updateTransaction(editing.id, {
+        title: editForm.title,
+        amount: editForm.amount,
+        payment_method: editForm.paymentMethod,
+        linked_to: editForm.linkedTo,
+      });
+      setTransactions((current) => current.map((item) => (item.id === editing.id ? updated : item)));
+      setEditing(null);
+      setToast("Operatsiya yangilandi");
+    } catch {
+      setToast("Operatsiya yangilanmadi");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   if (isLoading) {
@@ -147,7 +169,9 @@ export function TransactionsPage() {
               <Input label="Bog'lash" value={editForm.linkedTo} onChange={(value) => setEditForm((current) => ({ ...current, linkedTo: value }))} />
             </div>
             <div className="mt-4 flex gap-2">
-              <button onClick={saveEdit} className="h-10 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white">Saqlash</button>
+              <button onClick={saveEdit} disabled={isSaving} className="h-10 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60">
+                {isSaving ? "Saqlanmoqda" : "Saqlash"}
+              </button>
               <button onClick={() => setEditing(null)} className="h-10 rounded-lg border border-[#d9dfd6] px-4 text-sm font-medium">Bekor qilish</button>
             </div>
           </section>
@@ -214,4 +238,9 @@ function Input({ label, value, onChange }: { label: string; value: string; onCha
       <input value={value} onChange={(event) => onChange(event.target.value)} className="h-10 rounded-lg border border-[#d9dfd6] px-3 text-sm outline-none focus:border-[#17201b] focus:ring-2 focus:ring-[#dbe8dc]" />
     </label>
   );
+}
+
+function dateToIso(value: string) {
+  const date = value ? new Date(`${value}T12:00:00`) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }

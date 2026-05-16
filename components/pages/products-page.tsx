@@ -13,6 +13,7 @@ export function ProductsPage() {
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low">("all");
@@ -31,13 +32,18 @@ export function ProductsPage() {
   }, [products, query, stockFilter]);
 
   const load = useCallback(async () => {
-    const activeBusiness = await getActiveBusiness();
-    setBusiness(activeBusiness);
-    if (activeBusiness) {
-      const response = await apiClient.products(activeBusiness.id);
-      setProducts(response.results);
+    try {
+      const activeBusiness = await getActiveBusiness();
+      setBusiness(activeBusiness);
+      if (activeBusiness) {
+        const response = await apiClient.products(activeBusiness.id);
+        setProducts(response.results);
+      }
+    } catch {
+      setToast("Ombor ma'lumotlari yuklanmadi");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -62,11 +68,18 @@ export function ProductsPage() {
       unit: "dona",
     };
 
-    const saved = editingId ? await apiClient.updateProduct(editingId, payload) : await apiClient.createProduct(payload);
-    setProducts((current) => (editingId ? current.map((product) => (product.id === editingId ? saved : product)) : [saved, ...current]));
-    setForm({ name: "", category: "", stock: "", minStock: "", salePrice: "", costPrice: "" });
-    setEditingId(null);
-    setToast(editingId ? "Mahsulot yangilandi" : "Mahsulot qo'shildi");
+    setIsSaving(true);
+    try {
+      const saved = editingId ? await apiClient.updateProduct(editingId, payload) : await apiClient.createProduct(payload);
+      setProducts((current) => (editingId ? current.map((product) => (product.id === editingId ? saved : product)) : [saved, ...current]));
+      setForm({ name: "", category: "", stock: "", minStock: "", salePrice: "", costPrice: "" });
+      setEditingId(null);
+      setToast(editingId ? "Mahsulot yangilandi" : "Mahsulot qo'shildi");
+    } catch {
+      setToast("Mahsulot saqlanmadi");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function startEdit(product: ApiProduct) {
@@ -82,15 +95,23 @@ export function ProductsPage() {
   }
 
   async function deleteProduct(id: number) {
-    await apiClient.deleteProduct(id);
-    setProducts((current) => current.filter((product) => product.id !== id));
-    setToast("Mahsulot o'chirildi");
+    try {
+      await apiClient.deleteProduct(id);
+      setProducts((current) => current.filter((product) => product.id !== id));
+      setToast("Mahsulot o'chirildi");
+    } catch {
+      setToast("Mahsulot o'chirilmadi");
+    }
   }
 
   async function adjustStock(product: ApiProduct, delta: number) {
-    const updated = await apiClient.adjustProductStock(product.id, String(delta));
-    setProducts((current) => current.map((item) => (item.id === product.id ? updated : item)));
-    setToast(delta > 0 ? "Qoldiq oshirildi" : "Qoldiq kamaytirildi");
+    try {
+      const updated = await apiClient.adjustProductStock(product.id, String(delta));
+      setProducts((current) => current.map((item) => (item.id === product.id ? updated : item)));
+      setToast(delta > 0 ? "Qoldiq oshirildi" : "Qoldiq kamaytirildi");
+    } catch {
+      setToast("Qoldiq yangilanmadi");
+    }
   }
 
   if (isLoading) {
@@ -118,9 +139,13 @@ export function ProductsPage() {
               <Input label="Sotuv" value={form.salePrice} onChange={(value) => setForm((current) => ({ ...current, salePrice: value }))} />
               <Input label="Tannarx" value={form.costPrice} onChange={(value) => setForm((current) => ({ ...current, costPrice: value }))} />
             </div>
-            <button onClick={addProduct} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white">
+            <button
+              onClick={addProduct}
+              disabled={isSaving}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <Plus className="h-4 w-4" />
-              {editingId ? "Yangilash" : "Saqlash"}
+              {isSaving ? "Saqlanmoqda" : editingId ? "Yangilash" : "Saqlash"}
             </button>
             {editingId ? (
               <button

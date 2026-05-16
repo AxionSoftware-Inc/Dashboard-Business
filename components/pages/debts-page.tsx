@@ -14,6 +14,7 @@ export function DebtsPage() {
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [debts, setDebts] = useState<ApiDebt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [direction, setDirection] = useState<"all" | ApiDebt["direction"]>("all");
@@ -30,13 +31,18 @@ export function DebtsPage() {
   }, [debts, direction, query]);
 
   const load = useCallback(async () => {
-    const activeBusiness = await getActiveBusiness();
-    setBusiness(activeBusiness);
-    if (activeBusiness) {
-      const response = await apiClient.debts(activeBusiness.id);
-      setDebts(response.results);
+    try {
+      const activeBusiness = await getActiveBusiness();
+      setBusiness(activeBusiness);
+      if (activeBusiness) {
+        const response = await apiClient.debts(activeBusiness.id);
+        setDebts(response.results);
+      }
+    } catch {
+      setToast("Qarzlar yuklanmadi");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -50,28 +56,43 @@ export function DebtsPage() {
       return;
     }
 
-    const created = await apiClient.createDebt({
-      business: business.id,
-      contact_name: form.name.trim(),
-      amount: form.amount.replace(/\s/g, ""),
-      direction: form.direction,
-      is_closed: false,
-    });
-    setDebts((current) => [created, ...current]);
-    setForm({ name: "", amount: "", direction: "receivable" });
-    setToast("Qarz qo'shildi");
+    setIsSaving(true);
+    try {
+      const created = await apiClient.createDebt({
+        business: business.id,
+        contact_name: form.name.trim(),
+        amount: form.amount.replace(/\s/g, ""),
+        direction: form.direction,
+        is_closed: false,
+      });
+      setDebts((current) => [created, ...current]);
+      setForm({ name: "", amount: "", direction: "receivable" });
+      setToast("Qarz qo'shildi");
+    } catch {
+      setToast("Qarz saqlanmadi");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function closeDebt(id: number) {
-    const updated = await apiClient.updateDebt(id, { is_closed: true });
-    setDebts((current) => current.map((debt) => (debt.id === id ? updated : debt)).filter((debt) => !debt.is_closed));
-    setToast("Qarz yopildi");
+    try {
+      const updated = await apiClient.updateDebt(id, { is_closed: true });
+      setDebts((current) => current.map((debt) => (debt.id === id ? updated : debt)).filter((debt) => !debt.is_closed));
+      setToast("Qarz yopildi");
+    } catch {
+      setToast("Qarz yopilmadi");
+    }
   }
 
   async function deleteDebt(id: number) {
-    await apiClient.deleteDebt(id);
-    setDebts((current) => current.filter((debt) => debt.id !== id));
-    setToast("Qarz o'chirildi");
+    try {
+      await apiClient.deleteDebt(id);
+      setDebts((current) => current.filter((debt) => debt.id !== id));
+      setToast("Qarz o'chirildi");
+    } catch {
+      setToast("Qarz o'chirilmadi");
+    }
   }
 
   async function applyPartialPayment() {
@@ -83,14 +104,21 @@ export function DebtsPage() {
       return;
     }
 
-    const nextAmount = Math.max(0, Number(debt.amount) - payment);
-    const updated = await apiClient.updateDebt(debt.id, {
-      amount: String(nextAmount),
-      is_closed: nextAmount === 0,
-    });
-    setDebts((current) => current.map((item) => (item.id === debt.id ? updated : item)).filter((item) => !item.is_closed));
-    setPaymentForm({ debtId: 0, amount: "" });
-    setToast(nextAmount === 0 ? "Qarz to'liq yopildi" : "Qisman to'lov yozildi");
+    setIsSaving(true);
+    try {
+      const nextAmount = Math.max(0, Number(debt.amount) - payment);
+      const updated = await apiClient.updateDebt(debt.id, {
+        amount: String(nextAmount),
+        is_closed: nextAmount === 0,
+      });
+      setDebts((current) => current.map((item) => (item.id === debt.id ? updated : item)).filter((item) => !item.is_closed));
+      setPaymentForm({ debtId: 0, amount: "" });
+      setToast(nextAmount === 0 ? "Qarz to'liq yopildi" : "Qisman to'lov yozildi");
+    } catch {
+      setToast("Qisman to'lov saqlanmadi");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   if (isLoading) {
@@ -114,9 +142,13 @@ export function DebtsPage() {
               <option value="receivable">Biz olamiz</option>
               <option value="payable">Biz beramiz</option>
             </select>
-            <button onClick={addDebt} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white">
+            <button
+              onClick={addDebt}
+              disabled={isSaving}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <Plus className="h-4 w-4" />
-              Saqlash
+              {isSaving ? "Saqlanmoqda" : "Saqlash"}
             </button>
           </div>
           <div className="mt-5 border-t border-[#e5e9e2] pt-4">
@@ -129,7 +161,7 @@ export function DebtsPage() {
                 ))}
               </select>
               <Input label="To'lov summasi" value={paymentForm.amount} onChange={(value) => setPaymentForm((current) => ({ ...current, amount: value }))} />
-              <button onClick={applyPartialPayment} className="h-10 rounded-lg border border-[#d9dfd6] px-4 text-sm font-medium hover:bg-[#f6f8f5]">
+              <button onClick={applyPartialPayment} disabled={isSaving} className="h-10 rounded-lg border border-[#d9dfd6] px-4 text-sm font-medium hover:bg-[#f6f8f5] disabled:cursor-not-allowed disabled:opacity-60">
                 Qisman yopish
               </button>
             </div>

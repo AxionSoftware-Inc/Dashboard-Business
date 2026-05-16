@@ -34,7 +34,7 @@ export function OperationDrawer({ isOpen, initialType, preset, onClose, onSave }
     amount: "",
     method: "Naqd",
     link: preset?.defaultLink ?? "Kassa",
-    date: "Bugun",
+    date: new Date().toISOString().slice(0, 10),
     note: "",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -137,7 +137,13 @@ export function OperationDrawer({ isOpen, initialType, preset, onClose, onSave }
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectField label="Bog'lash" value={form.link} options={links} onChange={(value) => update("link", value)} />
-              <Field label="Sana" placeholder="Bugun" value={form.date} onChange={(value) => update("date", value)} />
+              <Field
+                label="Sana"
+                placeholder="Bugun"
+                value={form.date}
+                type="date"
+                onChange={(value) => update("date", value)}
+              />
             </div>
             <label className="grid gap-2">
               <span className="text-sm font-medium text-[#263027]">Izoh</span>
@@ -196,6 +202,7 @@ function Field({
   onChange,
   error,
   inputMode,
+  type = "text",
 }: {
   label: string;
   placeholder: string;
@@ -203,6 +210,7 @@ function Field({
   onChange: (value: string) => void;
   error?: string;
   inputMode?: "numeric";
+  type?: "text" | "date";
 }) {
   return (
     <label className="grid gap-2">
@@ -211,6 +219,7 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         inputMode={inputMode}
+        type={type}
         className={`h-10 rounded-lg border px-3 text-sm outline-none focus:border-[#17201b] focus:ring-2 focus:ring-[#dbe8dc] ${
           error ? "border-rose-500" : "border-[#d9dfd6]"
         }`}

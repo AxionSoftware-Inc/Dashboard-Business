@@ -146,7 +146,14 @@ async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    let detail = `${response.status} ${response.statusText}`;
+    try {
+      const payload = await response.json();
+      detail = payload.detail ?? JSON.stringify(payload);
+    } catch {
+      detail = await response.text();
+    }
+    throw new Error(`API request failed: ${detail}`);
   }
 
   if (response.status === 204) {
@@ -168,7 +175,7 @@ export const apiClient = {
       body: JSON.stringify(payload),
     }),
   me: (token: string) => request<ApiUser>("/auth/me/", { token }),
-  businesses: (token: string) => request<PaginatedResponse<ApiBusiness>>("/businesses/", { token }),
+  businesses: (token?: string) => request<PaginatedResponse<ApiBusiness>>("/businesses/", token ? { token } : {}),
   business: (businessId: number) => request<ApiBusiness>(`/businesses/${businessId}/`),
   createBusiness: (payload: CreateBusinessPayload) =>
     request<ApiBusiness>("/businesses/", {

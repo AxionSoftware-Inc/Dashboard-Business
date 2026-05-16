@@ -28,7 +28,7 @@ export function NoBusinessState({ compact = false }: { compact?: boolean }) {
       </p>
       <a
         className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white"
-        href="/dashboard?setup=1"
+        href="/setup"
       >
         Boshlash
       </a>

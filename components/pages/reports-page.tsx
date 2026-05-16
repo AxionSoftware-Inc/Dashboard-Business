@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/pages/page-header";
 import { NoBusinessState, PageLoading } from "@/components/pages/page-state";
+import { Toast } from "@/components/ui/toast";
 import { apiClient, type ApiBusiness, type ApiDashboardSummary } from "@/lib/api-client";
 import { getActiveBusiness } from "@/lib/business-context";
 import { formatMoney } from "@/lib/format";
@@ -22,14 +23,20 @@ export function ReportsPage() {
   const [summary, setSummary] = useState<ApiDashboardSummary | null>(null);
   const [period, setPeriod] = useState<Period>("today");
   const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const activeBusiness = await getActiveBusiness();
-    setBusiness(activeBusiness);
-    if (activeBusiness) {
-      setSummary(await apiClient.dashboardSummary(activeBusiness.id, getPeriodRange(period)));
+    try {
+      const activeBusiness = await getActiveBusiness();
+      setBusiness(activeBusiness);
+      if (activeBusiness) {
+        setSummary(await apiClient.dashboardSummary(activeBusiness.id, getPeriodRange(period)));
+      }
+    } catch {
+      setToast("Hisobot yuklanmadi");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [period]);
 
   useEffect(() => {
@@ -92,7 +99,7 @@ export function ReportsPage() {
 
         <aside className="rounded-lg border border-[#dfe4dc] bg-white p-4">
           <h2 className="text-lg font-semibold">Pul oqimi tarkibi</h2>
-          <p className="mt-1 text-sm text-[#69756c]">Davr tanlovi UI tayyor, backend filter keyingi bosqichda ulanadi.</p>
+          <p className="mt-1 text-sm text-[#69756c]">Davr tanlovi backend hisobot filterlari bilan ishlaydi.</p>
           <div className="mt-5 space-y-4">
             {breakdown.map((item) => (
               <div key={item.label}>
@@ -108,6 +115,7 @@ export function ReportsPage() {
           </div>
         </aside>
       </div>
+      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
     </AppShell>
   );
 }
