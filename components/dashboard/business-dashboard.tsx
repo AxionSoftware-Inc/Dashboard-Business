@@ -11,7 +11,6 @@ import { ProfitFormula } from "@/components/dashboard/profit-formula";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ReportsPanel } from "@/components/dashboard/reports-panel";
 import { SummaryPanel } from "@/components/dashboard/summary-panel";
-import { TemplatePicker } from "@/components/dashboard/template-picker";
 import { TopBar } from "@/components/dashboard/top-bar";
 import { TransactionJournal } from "@/components/dashboard/transaction-journal";
 import { NoBusinessState } from "@/components/pages/page-state";
@@ -163,21 +162,6 @@ export function BusinessDashboard() {
     window.location.href = "/setup";
   }
 
-  async function changeTemplate(templateKey: TemplateKey) {
-    setSelectedTemplateKey(templateKey);
-    if (!business) {
-      return;
-    }
-
-    try {
-      const updated = await apiClient.updateBusiness(business.id, { template: templateKey });
-      setBusiness(updated);
-      setToast("Template yangilandi");
-    } catch {
-      setError("Template saqlanmadi. Qayta urinib ko'ring.");
-    }
-  }
-
   async function saveOperation(operation: OperationDraft) {
     if (!business) {
       setError("Avval biznes yarating.");
@@ -229,7 +213,6 @@ export function BusinessDashboard() {
 
       <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
         <section className="space-y-5">
-          <TemplatePicker templates={templates} activeKey={activeTemplateKey} onSelect={(key) => void changeTemplate(key)} />
           <MetricsGrid totals={totals} />
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
