@@ -1,9 +1,11 @@
 "use client";
 
-import { Building2, Boxes, FileSpreadsheet, LayoutDashboard, Plus, Settings2, Users, WalletCards } from "lucide-react";
+import { Building2, Boxes, FileSpreadsheet, LayoutDashboard, LogOut, Plus, Settings2, Users, WalletCards } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { IconButton } from "@/components/ui/icon-button";
+import { clearSession, getAccessToken } from "@/lib/auth";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -20,6 +22,23 @@ const navItems = [
 
 export function AppShell({ children, onCreateOperation }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isReady] = useState(() => Boolean(getAccessToken()));
+
+  useEffect(() => {
+    if (!isReady) {
+      router.replace("/login");
+    }
+  }, [isReady, router]);
+
+  function logout() {
+    clearSession();
+    router.replace("/login");
+  }
+
+  if (!isReady) {
+    return <main className="min-h-screen bg-[#f4f5f2]" />;
+  }
 
   return (
     <main className="min-h-screen bg-[#f4f5f2] text-[#17201b]">
@@ -37,6 +56,9 @@ export function AppShell({ children, onCreateOperation }: AppShellProps) {
         <Link href="/settings">
           <IconButton icon={Settings2} label="Sozlamalar" active={pathname === "/settings"} />
         </Link>
+        <button onClick={logout}>
+          <IconButton icon={LogOut} label="Chiqish" />
+        </button>
       </aside>
 
       <section className="pb-20 lg:pb-0 lg:pl-20">{children}</section>

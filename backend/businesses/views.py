@@ -1,5 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 
+from audits.models import AuditLog
+from audits.services import write_audit_log
 from businesses.models import Business
 from businesses.serializers import BusinessSerializer
 
@@ -11,10 +13,16 @@ class BusinessViewSet(ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        if self.request.user.is_authenticated:
-            return Business.objects.filter(owner=self.request.user)
-        return Business.objects.all()
+        return Business.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
-        owner = self.request.user if self.request.user.is_authenticated else None
-        serializer.save(owner=owner)
+        business = serializer.save(owner=self.request.user)
+        write_audit_log(self.request, AuditLog.Action.CREATE, business, business.name)
+
+    def perform_update(self, serializer):
+        business = serializer.save(owner=self.request.user)
+        write_audit_log(self.request, AuditLog.Action.UPDATE, business, business.name)
+
+    def perform_destroy(self, instance):
+        write_audit_log(self.request, AuditLog.Action.DELETE, instance, instance.name)
+        instance.delete()

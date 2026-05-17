@@ -21,7 +21,7 @@ export default function Home() {
           </div>
           <Link
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white"
-            href="/setup"
+            href="/register"
           >
             Boshlash
             <ArrowRight className="h-4 w-4" />
@@ -41,14 +41,14 @@ export default function Home() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
               className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-5 text-sm font-medium text-white"
-              href="/setup"
+              href="/register"
             >
               Bepul boshlash
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               className="inline-flex h-11 items-center justify-center rounded-lg border border-[#cfd8cd] bg-white px-5 text-sm font-medium"
-              href="/dashboard"
+              href="/login"
             >
               Mening dashboardim
             </Link>

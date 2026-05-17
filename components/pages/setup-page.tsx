@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Onboarding } from "@/components/dashboard/onboarding";
 import { Toast } from "@/components/ui/toast";
 import { createAndActivateBusiness } from "@/lib/business-context";
 import { normalizeMoneyInput } from "@/lib/format";
+import { getAccessToken } from "@/lib/auth";
 import type { BusinessProfile } from "@/lib/types";
 
 export function SetupPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   async function completeOnboarding(profile: BusinessProfile) {
     setError(null);

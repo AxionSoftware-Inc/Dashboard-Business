@@ -1,12 +1,15 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from audits.mixins import AuditModelViewSetMixin
+from audits.models import AuditLog
+from audits.services import write_audit_log
 
 from catalog.models import Product
 from catalog.serializers import ProductSerializer
 
 
-class ProductViewSet(ModelViewSet):
+class ProductViewSet(AuditModelViewSetMixin, ModelViewSet):
     serializer_class = ProductSerializer
     filterset_fields = ["business", "category", "is_active"]
     search_fields = ["name", "sku", "category"]
@@ -15,8 +18,7 @@ class ProductViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = Product.objects.select_related("business")
-        if self.request.user.is_authenticated:
-            queryset = queryset.filter(business__owner=self.request.user)
+        queryset = queryset.filter(business__owner=self.request.user)
         business_id = self.request.query_params.get("business")
         if business_id:
             queryset = queryset.filter(business_id=business_id)
@@ -32,4 +34,5 @@ class ProductViewSet(ModelViewSet):
             return Response({"detail": "delta must be a valid number"}, status=400)
 
         product.save(update_fields=["stock", "updated_at"])
+        write_audit_log(request, AuditLog.Action.UPDATE, product, f"Stock adjusted by {delta}")
         return Response(self.get_serializer(product).data)

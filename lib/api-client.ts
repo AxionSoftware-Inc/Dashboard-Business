@@ -134,17 +134,78 @@ type RequestOptions = RequestInit & {
   token?: string;
 };
 
-async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+function getStoredAccessToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.localStorage.getItem("business-dashboard-access-token");
+}
+
+function getStoredRefreshToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.localStorage.getItem("business-dashboard-refresh-token");
+}
+
+function saveAccessToken(access: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem("business-dashboard-access-token", access);
+}
+
+function clearAuthStorage() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.removeItem("business-dashboard-access-token");
+  window.localStorage.removeItem("business-dashboard-refresh-token");
+  window.localStorage.removeItem("business-dashboard-user");
+  window.localStorage.removeItem("business-dashboard-active-business-id");
+}
+
+async function refreshAccessToken() {
+  const refresh = getStoredRefreshToken();
+  if (!refresh) {
+    return null;
+  }
+
+  const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh }),
+  });
+
+  if (!response.ok) {
+    clearAuthStorage();
+    return null;
+  }
+
+  const payload = (await response.json()) as { access: string };
+  saveAccessToken(payload.access);
+  return payload.access;
+}
+
+async function request<T>(path: string, init: RequestOptions = {}, hasRetried = false): Promise<T> {
   const { token, headers, ...requestInit } = init;
+  const accessToken = token ?? getStoredAccessToken();
   const normalizedPath = path.length > 1 ? path.replace(/\/(?=\?|$)/, "") : path;
   const response = await fetch(`${apiBaseUrl}${normalizedPath}`, {
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
     ...requestInit,
   });
+
+  if (response.status === 401 && !hasRetried && !token) {
+    const refreshedToken = await refreshAccessToken();
+    if (refreshedToken) {
+      return request<T>(path, { ...init, token: refreshedToken }, true);
+    }
+  }
 
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`;

@@ -1,10 +1,11 @@
 from rest_framework.viewsets import ModelViewSet
 
+from audits.mixins import AuditModelViewSetMixin
 from operations.models import Debt, Transaction
 from operations.serializers import DebtSerializer, TransactionSerializer
 
 
-class TransactionViewSet(ModelViewSet):
+class TransactionViewSet(AuditModelViewSetMixin, ModelViewSet):
     serializer_class = TransactionSerializer
     filterset_fields = ["business", "type", "payment_method"]
     search_fields = ["title", "linked_to", "note", "payment_method"]
@@ -13,8 +14,7 @@ class TransactionViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = Transaction.objects.select_related("business")
-        if self.request.user.is_authenticated:
-            queryset = queryset.filter(business__owner=self.request.user)
+        queryset = queryset.filter(business__owner=self.request.user)
         business_id = self.request.query_params.get("business")
         transaction_type = self.request.query_params.get("type")
 
@@ -26,7 +26,7 @@ class TransactionViewSet(ModelViewSet):
         return queryset
 
 
-class DebtViewSet(ModelViewSet):
+class DebtViewSet(AuditModelViewSetMixin, ModelViewSet):
     serializer_class = DebtSerializer
     filterset_fields = ["business", "direction", "is_closed"]
     search_fields = ["contact_name", "note"]
@@ -35,8 +35,7 @@ class DebtViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = Debt.objects.select_related("business")
-        if self.request.user.is_authenticated:
-            queryset = queryset.filter(business__owner=self.request.user)
+        queryset = queryset.filter(business__owner=self.request.user)
         business_id = self.request.query_params.get("business")
         is_closed = self.request.query_params.get("is_closed")
 

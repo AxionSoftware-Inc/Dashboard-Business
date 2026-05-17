@@ -20,9 +20,8 @@ def dashboard_summary(request):
     transactions = Transaction.objects.all()
     debts = Debt.objects.filter(is_closed=False)
 
-    if request.user.is_authenticated:
-        transactions = transactions.filter(business__owner=request.user)
-        debts = debts.filter(business__owner=request.user)
+    transactions = transactions.filter(business__owner=request.user)
+    debts = debts.filter(business__owner=request.user)
 
     if business_id:
         transactions = transactions.filter(business_id=business_id)
