@@ -24,7 +24,7 @@ export function NoBusinessState({ compact = false }: { compact?: boolean }) {
     <div className="max-w-md rounded-lg border border-[#dfe4dc] bg-white p-5 text-center">
       <p className="font-semibold">Avval biznes turini tanlang</p>
       <p className="mt-2 text-sm leading-6 text-[#69756c]">
-        Dashboard, ombor, qarzlar va hisobotlar tanlangan template bo&apos;yicha ochiladi.
+        Biznes yaratilgandan keyin dashboard, ombor, qarzlar va hisobotlar shu biznes bo&apos;yicha ochiladi.
       </p>
       <a
         className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white"

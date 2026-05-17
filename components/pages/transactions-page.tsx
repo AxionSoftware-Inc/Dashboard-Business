@@ -180,7 +180,7 @@ export function TransactionsPage() {
           <div className="flex flex-col gap-3 border-b border-[#e5e9e2] p-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold">Jurnal</h2>
-              <p className="text-sm text-[#69756c]">Backenddagi barcha kirim, chiqim va savdo yozuvlari.</p>
+              <p className="text-sm text-[#69756c]">Joriy biznesdagi kirim, chiqim va savdo yozuvlari.</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <label className="relative">

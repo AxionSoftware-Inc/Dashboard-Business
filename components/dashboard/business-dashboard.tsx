@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { ActionPlan } from "@/components/dashboard/action-plan";
 import { DebtPanel } from "@/components/dashboard/debt-panel";
@@ -68,6 +69,7 @@ const transactionTypeLabel: Record<ApiTransaction["type"], Transaction["type"]> 
 };
 
 export function BusinessDashboard() {
+  const router = useRouter();
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<TemplateKey | null>(null);
   const [summary, setSummary] = useState<ApiDashboardSummary | null>(null);
@@ -111,7 +113,7 @@ export function BusinessDashboard() {
 
     try {
       if (window.location.search.includes("setup=1")) {
-        window.location.replace("/setup");
+        router.replace("/setup");
         return;
       }
 
@@ -122,12 +124,15 @@ export function BusinessDashboard() {
       if (activeBusiness) {
         await loadBusinessData(activeBusiness.id);
       }
-    } catch {
-      setError("Backend API bilan aloqa bo'lmadi. Server ishlayotganini tekshiring.");
+    } catch (loadError) {
+      const message = loadError instanceof Error && loadError.message.includes("401")
+        ? "Sessiya tugagan. Qayta kiring."
+        : "Server bilan aloqa bo'lmadi. API va internet ulanishini tekshiring.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
-  }, [loadBusinessData]);
+  }, [loadBusinessData, router]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -160,7 +165,7 @@ export function BusinessDashboard() {
     setInventoryItems([]);
     setDebtItems([]);
     setSelectedTemplateKey(null);
-    window.location.href = "/setup";
+    router.push("/setup");
   }
 
   async function saveOperation(operation: OperationDraft) {
@@ -184,7 +189,7 @@ export function BusinessDashboard() {
       setJournalItems((current) => [mapApiTransaction(created), ...current]);
       const nextSummary = await apiClient.dashboardSummary(business.id);
       setSummary(nextSummary);
-      setToast(`${operation.title} backendga saqlandi`);
+      setToast(`${operation.title} saqlandi`);
     } catch {
       setError("Operatsiyani saqlashda xatolik bo'ldi.");
       throw new Error("Operation save failed");

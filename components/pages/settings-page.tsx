@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/pages/page-header";
 import { NoBusinessState, PageLoading } from "@/components/pages/page-state";
@@ -13,6 +14,7 @@ import { templates } from "@/lib/mock-data";
 const paymentOptions = ["Naqd", "Karta", "Click", "Payme", "Bank"];
 
 export function SettingsPage() {
+  const router = useRouter();
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [businesses, setBusinesses] = useState<ApiBusiness[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +72,7 @@ export function SettingsPage() {
 
   function startNewBusiness() {
     clearActiveBusinessId();
-    window.location.href = "/setup";
+    router.push("/setup");
   }
 
   useEffect(() => {

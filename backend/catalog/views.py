@@ -1,4 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
+from decimal import Decimal, InvalidOperation
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from audits.mixins import AuditModelViewSetMixin
@@ -29,10 +31,15 @@ class ProductViewSet(AuditModelViewSetMixin, ModelViewSet):
         product = self.get_object()
         delta = request.data.get("delta")
         try:
-            product.stock = product.stock + type(product.stock)(delta)
-        except Exception:
+            delta_value = Decimal(str(delta))
+        except (InvalidOperation, TypeError, ValueError):
             return Response({"detail": "delta must be a valid number"}, status=400)
 
+        next_stock = product.stock + delta_value
+        if next_stock < 0:
+            return Response({"detail": "stock cannot become negative"}, status=400)
+
+        product.stock = next_stock
         product.save(update_fields=["stock", "updated_at"])
         write_audit_log(request, AuditLog.Action.UPDATE, product, f"Stock adjusted by {delta}")
         return Response(self.get_serializer(product).data)

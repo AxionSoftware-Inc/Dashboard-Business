@@ -166,7 +166,7 @@ export function ProductsPage() {
           <div className="flex flex-col gap-3 border-b border-[#e5e9e2] p-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold">Mahsulotlar</h2>
-              <p className="text-sm text-[#69756c]">Backenddan kelayotgan ombor ro&apos;yxati.</p>
+              <p className="text-sm text-[#69756c]">Joriy biznesdagi ombor ro&apos;yxati.</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <label className="relative">

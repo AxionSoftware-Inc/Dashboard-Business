@@ -5,6 +5,7 @@ from django.utils.dateparse import parse_date
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from businesses.models import Business
 from operations.models import Debt, Transaction
 
 
@@ -17,11 +18,9 @@ def dashboard_summary(request):
     business_id = request.query_params.get("business")
     date_from = parse_date(request.query_params.get("date_from", ""))
     date_to = parse_date(request.query_params.get("date_to", ""))
-    transactions = Transaction.objects.all()
-    debts = Debt.objects.filter(is_closed=False)
-
-    transactions = transactions.filter(business__owner=request.user)
-    debts = debts.filter(business__owner=request.user)
+    businesses = Business.objects.filter(owner=request.user)
+    transactions = Transaction.objects.filter(business__in=businesses)
+    debts = Debt.objects.filter(business__in=businesses, is_closed=False)
 
     if business_id:
         transactions = transactions.filter(business_id=business_id)

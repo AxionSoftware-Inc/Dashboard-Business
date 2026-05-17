@@ -29,8 +29,37 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_is_low_stock(self, obj):
         return obj.stock <= obj.min_stock
 
+    def validate_name(self, value):
+        name = value.strip()
+        if len(name) < 2:
+            raise serializers.ValidationError("Product name must be at least 2 characters.")
+        return name
+
+    def validate_sku(self, value):
+        return value.strip()
+
+    def validate_stock(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Stock cannot be negative.")
+        return value
+
+    def validate_min_stock(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Minimum stock cannot be negative.")
+        return value
+
+    def validate_sale_price(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Sale price cannot be negative.")
+        return value
+
+    def validate_cost_price(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Cost price cannot be negative.")
+        return value
+
     def validate_business(self, business):
         request = self.context.get("request")
-        if request and request.user.is_authenticated and business.owner_id != request.user.id:
+        if request and business.owner_id != request.user.id:
             raise serializers.ValidationError("You do not have access to this business.")
         return business
