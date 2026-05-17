@@ -9,6 +9,12 @@ type DebtPanelProps = {
 export function DebtPanel({ debts }: DebtPanelProps) {
   return (
     <SectionCard title="Qarz daftari" subtitle="Kimdan olish va kimga berish kerak.">
+      {debts.length === 0 ? (
+        <div className="p-6 text-center">
+          <p className="font-medium text-[#17201b]">Ochiq qarz yo&apos;q</p>
+          <p className="mt-1 text-sm text-[#69756c]">Qarz yozuvlari qo&apos;shilganda shu yerda ko&apos;rinadi.</p>
+        </div>
+      ) : null}
       <div className="divide-y divide-[#edf0eb]">
         {debts.map((debt) => (
           <div key={debt.id} className="flex items-center justify-between gap-3 p-4">

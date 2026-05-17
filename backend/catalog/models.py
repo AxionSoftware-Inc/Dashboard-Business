@@ -17,7 +17,13 @@ class Product(models.Model):
 
     class Meta:
         ordering = ["name"]
-        unique_together = [("business", "sku")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "sku"],
+                condition=~models.Q(sku=""),
+                name="unique_nonblank_sku_per_business",
+            )
+        ]
 
     def __str__(self):
         return self.name

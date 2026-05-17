@@ -10,7 +10,7 @@ export function ActionPlan({ steps }: ActionPlanProps) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Keyingi ishlar</h2>
-          <p className="text-sm text-white/70">MVPni real mahsulotga aylantirish tartibi.</p>
+          <p className="text-sm text-white/70">Bugun e&apos;tibor berish kerak bo&apos;lgan ishlar.</p>
         </div>
         <FileSpreadsheet className="h-5 w-5 text-white/70" />
       </div>

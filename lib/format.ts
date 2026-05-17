@@ -23,3 +23,8 @@ export function formatCompactMoney(value: number) {
 export function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
+
+export function normalizeMoneyInput(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits || "0";
+}

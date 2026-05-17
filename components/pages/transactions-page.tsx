@@ -226,7 +226,7 @@ export function TransactionsPage() {
         </section>
       </div>
       <OperationDrawer key={`${operationType}-${isDrawerOpen}`} isOpen={isDrawerOpen} initialType={operationType} onClose={() => setIsDrawerOpen(false)} onSave={saveOperation} />
-      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+      {toast ? <Toast message={toast} tone={toast.includes("madi") ? "error" : "success"} onClose={() => setToast(null)} /> : null}
     </AppShell>
   );
 }

@@ -14,7 +14,7 @@ export function MetricsGrid({ totals }: MetricsGridProps) {
         icon={CircleDollarSign}
         label="Bugungi tushum"
         value={formatMoney(totals.revenue)}
-        hint="+12% kechagidan"
+        hint={totals.salesCount > 0 ? `${totals.salesCount} ta operatsiya` : "Hali operatsiya yo'q"}
         tone="text-emerald-700"
       />
       <MetricCard
@@ -35,7 +35,7 @@ export function MetricsGrid({ totals }: MetricsGridProps) {
         icon={Users}
         label="Olinadigan qarz"
         value={formatMoney(totals.receivable)}
-        hint="7 ta mijozda ochiq"
+        hint={totals.openDebtsCount > 0 ? `${totals.openDebtsCount} ta ochiq qarz` : "Ochiq qarz yo'q"}
         tone="text-sky-700"
       />
     </div>

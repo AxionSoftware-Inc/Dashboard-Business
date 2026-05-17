@@ -7,6 +7,7 @@ import { NoBusinessState, PageLoading } from "@/components/pages/page-state";
 import { Toast } from "@/components/ui/toast";
 import { apiClient, type ApiBusiness } from "@/lib/api-client";
 import { clearActiveBusinessId, getActiveBusiness, switchActiveBusiness } from "@/lib/business-context";
+import { normalizeMoneyInput } from "@/lib/format";
 import { templates } from "@/lib/mock-data";
 
 const paymentOptions = ["Naqd", "Karta", "Click", "Payme", "Bank"];
@@ -101,7 +102,7 @@ export function SettingsPage() {
         name: form.name.trim(),
         owner_name: form.ownerName.trim(),
         template: form.template,
-        starting_cash: normalizeMoney(form.startingCash),
+        starting_cash: normalizeMoneyInput(form.startingCash),
         payment_methods: form.paymentMethods,
       });
       setBusiness(updated);
@@ -195,7 +196,7 @@ export function SettingsPage() {
           </div>
         </section>
       </div>
-      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+      {toast ? <Toast message={toast} tone={toast.includes("madi") || toast.includes("kerak") ? "error" : "success"} onClose={() => setToast(null)} /> : null}
     </AppShell>
   );
 }
@@ -220,9 +221,4 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="font-medium text-[#17201b]">{value}</dd>
     </div>
   );
-}
-
-function normalizeMoney(value: string) {
-  const digits = value.replace(/\D/g, "");
-  return digits || "0";
 }

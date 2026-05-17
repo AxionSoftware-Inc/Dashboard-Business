@@ -7,6 +7,8 @@ type TopBarProps = {
 };
 
 export function TopBar({ businessName, onCreateOperation, onResetOnboarding }: TopBarProps) {
+  const currentPeriod = new Intl.DateTimeFormat("uz-UZ", { month: "long", year: "numeric" }).format(new Date());
+
   return (
     <header className="sticky top-0 z-10 border-b border-[#dfe4dc] bg-white/92 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
@@ -25,7 +27,7 @@ export function TopBar({ businessName, onCreateOperation, onResetOnboarding }: T
           </button>
           <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#d9dfd6] bg-white px-3 text-sm font-medium text-[#263027] hover:bg-[#f6f8f5]">
             <CalendarDays className="h-4 w-4" />
-            Aprel 2026
+            {currentPeriod}
           </button>
           <button
             onClick={onCreateOperation}

@@ -8,7 +8,7 @@ import { EmptyState, NoBusinessState, PageLoading } from "@/components/pages/pag
 import { Toast } from "@/components/ui/toast";
 import { apiClient, type ApiBusiness, type ApiDebt } from "@/lib/api-client";
 import { getActiveBusiness } from "@/lib/business-context";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, normalizeMoneyInput } from "@/lib/format";
 
 export function DebtsPage() {
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
@@ -61,7 +61,7 @@ export function DebtsPage() {
       const created = await apiClient.createDebt({
         business: business.id,
         contact_name: form.name.trim(),
-        amount: form.amount.replace(/\s/g, ""),
+        amount: normalizeMoneyInput(form.amount),
         direction: form.direction,
         is_closed: false,
       });
@@ -97,7 +97,7 @@ export function DebtsPage() {
 
   async function applyPartialPayment() {
     const debt = debts.find((item) => item.id === paymentForm.debtId);
-    const payment = Number(paymentForm.amount.replace(/\s/g, ""));
+    const payment = Number(normalizeMoneyInput(paymentForm.amount));
 
     if (!debt || !payment || payment <= 0) {
       setToast("Qarz va to'lov summasini tanlang");
@@ -207,7 +207,7 @@ export function DebtsPage() {
           )}
         </section>
       </div>
-      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+      {toast ? <Toast message={toast} tone={toast.includes("madi") || toast.includes("kerak") || toast.includes("tanlang") ? "error" : "success"} onClose={() => setToast(null)} /> : null}
     </AppShell>
   );
 }

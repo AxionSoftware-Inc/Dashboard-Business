@@ -47,6 +47,7 @@ const fallbackTotals: DashboardTotals = {
   cash: 0,
   bank: 0,
   salesCount: 0,
+  openDebtsCount: 0,
   discount: 0,
 };
 
@@ -268,6 +269,7 @@ function mapSummaryToTotals(summary: ApiDashboardSummary | null, business: ApiBu
     cash: Number(business?.starting_cash ?? 0),
     bank: 0,
     salesCount: summary.transactions_count,
+    openDebtsCount: summary.open_debts_count,
     discount: 0,
   };
 }
@@ -293,7 +295,7 @@ function mapApiTransaction(item: ApiTransaction): Transaction {
     amount: Number(item.amount),
     method: item.payment_method || "Kiritilmagan",
     time: new Date(item.happened_at).toLocaleString("uz-UZ"),
-    status: "Backend",
+    status: item.type === "expense" ? "Chiqim" : "Kassa",
     linkedTo: item.linked_to || "Umumiy",
   };
 }

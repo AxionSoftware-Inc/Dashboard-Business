@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Onboarding } from "@/components/dashboard/onboarding";
 import { Toast } from "@/components/ui/toast";
 import { createAndActivateBusiness } from "@/lib/business-context";
+import { normalizeMoneyInput } from "@/lib/format";
 import type { BusinessProfile } from "@/lib/types";
 
 export function SetupPage() {
@@ -22,7 +23,7 @@ export function SetupPage() {
         owner_name: profile.ownerName.trim(),
         template: profile.templateKey,
         currency: "UZS",
-        starting_cash: normalizeMoney(profile.startingCash),
+        starting_cash: normalizeMoneyInput(profile.startingCash),
         payment_methods: profile.paymentMethods,
       });
       router.replace("/dashboard");
@@ -39,9 +40,4 @@ export function SetupPage() {
       {error ? <Toast message={error} tone="error" onClose={() => setError(null)} /> : null}
     </>
   );
-}
-
-function normalizeMoney(value: string) {
-  const digits = value.replace(/\D/g, "");
-  return digits || "0";
 }

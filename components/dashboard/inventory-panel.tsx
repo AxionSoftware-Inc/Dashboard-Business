@@ -1,4 +1,5 @@
 import { PackageCheck, ShoppingBag } from "lucide-react";
+import Link from "next/link";
 import { SectionCard } from "@/components/ui/section-card";
 import { formatCompactMoney } from "@/lib/format";
 import type { Product } from "@/lib/types";
@@ -13,12 +14,18 @@ export function InventoryPanel({ products }: InventoryPanelProps) {
       title="Ombor nazorati"
       subtitle="Kam qolgan tovarlar darhol ko'rinadi."
       action={
-        <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-3 text-sm font-medium text-white hover:bg-[#28332c]">
+        <Link href="/products" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#17201b] px-3 text-sm font-medium text-white hover:bg-[#28332c]">
           <PackageCheck className="h-4 w-4" />
           Tovar qo&apos;shish
-        </button>
+        </Link>
       }
     >
+      {products.length === 0 ? (
+        <div className="p-6 text-center">
+          <p className="font-medium text-[#17201b]">Omborda mahsulot yo&apos;q</p>
+          <p className="mt-1 text-sm text-[#69756c]">Birinchi mahsulotni qo&apos;shsangiz, qoldiq va kam qolganlar shu yerda chiqadi.</p>
+        </div>
+      ) : null}
       <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
         {products.map((product) => {
           const isLow = product.stock <= product.minStock;

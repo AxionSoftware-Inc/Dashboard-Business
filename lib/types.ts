@@ -56,6 +56,7 @@ export type DashboardTotals = {
   cash: number;
   bank: number;
   salesCount: number;
+  openDebtsCount: number;
   discount: number;
 };
 

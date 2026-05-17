@@ -20,7 +20,7 @@ export function SummaryPanel({ totals }: SummaryPanelProps) {
         <MiniStat label="Kassa" value={formatCompactMoney(totals.cash)} />
         <MiniStat label="Bank" value={formatCompactMoney(totals.bank)} />
         <MiniStat label="Savdo" value={`${totals.salesCount} ta`} />
-        <MiniStat label="Chegirma" value={formatCompactMoney(totals.discount)} />
+        <MiniStat label="Qarzlar" value={`${totals.openDebtsCount} ta`} />
       </div>
     </section>
   );

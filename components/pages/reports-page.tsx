@@ -115,7 +115,7 @@ export function ReportsPage() {
           </div>
         </aside>
       </div>
-      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+      {toast ? <Toast message={toast} tone="error" onClose={() => setToast(null)} /> : null}
     </AppShell>
   );
 }

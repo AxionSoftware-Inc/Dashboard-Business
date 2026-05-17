@@ -52,6 +52,7 @@ export const totals: DashboardTotals = {
   cash: 6_400_000,
   bank: 12_100_000,
   salesCount: 83,
+  openDebtsCount: 0,
   discount: 310_000,
 };
 

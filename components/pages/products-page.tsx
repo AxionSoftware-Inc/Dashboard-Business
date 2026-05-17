@@ -8,6 +8,7 @@ import { EmptyState, NoBusinessState, PageLoading } from "@/components/pages/pag
 import { Toast } from "@/components/ui/toast";
 import { apiClient, type ApiBusiness, type ApiProduct } from "@/lib/api-client";
 import { getActiveBusiness } from "@/lib/business-context";
+import { normalizeMoneyInput } from "@/lib/format";
 
 export function ProductsPage() {
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
@@ -61,10 +62,10 @@ export function ProductsPage() {
       business: business.id,
       name: form.name.trim(),
       category: form.category.trim(),
-      stock: form.stock || "0",
-      min_stock: form.minStock || "0",
-      sale_price: form.salePrice || "0",
-      cost_price: form.costPrice || "0",
+      stock: normalizeMoneyInput(form.stock),
+      min_stock: normalizeMoneyInput(form.minStock),
+      sale_price: normalizeMoneyInput(form.salePrice),
+      cost_price: normalizeMoneyInput(form.costPrice),
       unit: "dona",
     };
 
@@ -212,7 +213,7 @@ export function ProductsPage() {
           )}
         </section>
       </div>
-      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+      {toast ? <Toast message={toast} tone={toast.includes("madi") || toast.includes("kiriting") ? "error" : "success"} onClose={() => setToast(null)} /> : null}
     </AppShell>
   );
 }
