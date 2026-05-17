@@ -1,12 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 User = get_user_model()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password = serializers.CharField(write_only=True, allow_blank=False, trim_whitespace=False)
 
     class Meta:
         model = User
@@ -14,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_username(self, value):
-        username = value.strip().lower()
+        username = "".join(value.strip().lower().split())
         if not username:
             raise serializers.ValidationError("Username is required.")
         if User.objects.filter(username__iexact=username).exists():

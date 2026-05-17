@@ -52,6 +52,13 @@ export async function login(username: string, password: string) {
 }
 
 export async function register(payload: { username: string; password: string; email?: string; first_name?: string }) {
-  await apiClient.register(payload);
+  try {
+    await apiClient.register(payload);
+  } catch (error) {
+    if (error instanceof Error && error.message.toLowerCase().includes("already")) {
+      return login(payload.username, payload.password);
+    }
+    throw error;
+  }
   return login(payload.username, payload.password);
 }

@@ -54,3 +54,12 @@ class BusinessApiTests(APITestCase):
                 model_name="Business",
             ).exists()
         )
+
+    def test_register_allows_simple_password(self):
+        response = self.client.post(
+            "/api/auth/register/",
+            {"username": "998901234567", "password": "1"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)

@@ -41,7 +41,7 @@ export function AuthPage({ mode }: AuthPageProps) {
         router.replace("/dashboard");
       }
     } catch {
-      setError(isRegister ? "Ro'yxatdan o'tishda xato. Ma'lumotlarni tekshiring." : "Login yoki parol noto'g'ri.");
+      setError(isRegister ? "Bu login oldin ochilgan bo'lishi mumkin. Shu parol bilan kirishga urinib ko'ring." : "Login yoki parol noto'g'ri.");
     } finally {
       setIsSubmitting(false);
     }
