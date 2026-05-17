@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BarChart3 } from "lucide-react";
+import { ArrowRight, BarChart3, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -22,7 +22,7 @@ export function AuthPage({ mode }: AuthPageProps) {
     setError("");
 
     if (!form.username.trim() || !form.password.trim()) {
-      setError("Login va parolni kiriting.");
+      setError("Telefon yoki login va parolni kiriting.");
       return;
     }
 
@@ -30,18 +30,36 @@ export function AuthPage({ mode }: AuthPageProps) {
       setIsSubmitting(true);
       if (isRegister) {
         await register({
-          username: form.username.trim(),
+          username: normalizeUsername(form.username),
           password: form.password,
           email: form.email.trim() || undefined,
           first_name: form.firstName.trim() || undefined,
         });
         router.replace("/setup");
       } else {
-        await login(form.username.trim(), form.password);
+        await login(normalizeUsername(form.username), form.password);
         router.replace("/dashboard");
       }
     } catch {
       setError(isRegister ? "Ro'yxatdan o'tishda xato. Ma'lumotlarni tekshiring." : "Login yoki parol noto'g'ri.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function quickStart() {
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const suffix = `${Date.now()}`.slice(-8);
+      await register({
+        username: `user${suffix}`,
+        password: `Start${suffix}!`,
+      });
+      router.replace("/setup");
+    } catch {
+      setError("Tez boshlashda xato bo'ldi. Iltimos, login va parol bilan urinib ko'ring.");
     } finally {
       setIsSubmitting(false);
     }
@@ -57,19 +75,25 @@ export function AuthPage({ mode }: AuthPageProps) {
           <span className="font-semibold">Business Dashboard</span>
         </Link>
 
-        <h1 className="text-2xl font-semibold">{isRegister ? "Akkaunt ochish" : "Kirish"}</h1>
+        <h1 className="text-2xl font-semibold">{isRegister ? "Tez boshlash" : "Kirish"}</h1>
         <p className="mt-2 text-sm leading-6 text-[#69756c]">
-          {isRegister ? "Biznes ma'lumotlari alohida akkauntga bog'lanadi." : "Dashboard va hisob-kitoblaringizni davom ettiring."}
+          {isRegister ? "Avval dashboardga kiring, biznes ma'lumotlarini keyingi qadamda to'ldirasiz." : "Dashboard va hisob-kitoblaringizni davom ettiring."}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {isRegister ? (
-            <>
-              <AuthField label="Ism" value={form.firstName} onChange={(value) => setForm((current) => ({ ...current, firstName: value }))} />
-              <AuthField label="Email" type="email" value={form.email} onChange={(value) => setForm((current) => ({ ...current, email: value }))} />
-            </>
-          ) : null}
-          <AuthField label="Login" value={form.username} onChange={(value) => setForm((current) => ({ ...current, username: value }))} />
+        {isRegister ? (
+          <button
+            type="button"
+            onClick={quickStart}
+            disabled={isSubmitting}
+            className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Sparkles className="h-4 w-4" />
+            Bir bosishda boshlash
+          </button>
+        ) : null}
+
+        <form onSubmit={handleSubmit} className={isRegister ? "mt-4 space-y-4 border-t border-[#e5e9e2] pt-4" : "mt-6 space-y-4"}>
+          <AuthField label="Telefon yoki login" value={form.username} onChange={(value) => setForm((current) => ({ ...current, username: value }))} />
           <AuthField label="Parol" type="password" value={form.password} onChange={(value) => setForm((current) => ({ ...current, password: value }))} />
 
           {error ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
@@ -79,20 +103,24 @@ export function AuthPage({ mode }: AuthPageProps) {
             disabled={isSubmitting}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#17201b] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Kuting..." : isRegister ? "Akkaunt ochish" : "Kirish"}
+            {isSubmitting ? "Kuting..." : isRegister ? "Login bilan boshlash" : "Kirish"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
 
         <p className="mt-5 text-center text-sm text-[#69756c]">
-          {isRegister ? "Akkauntingiz bormi?" : "Akkauntingiz yo'qmi?"}{" "}
+          {isRegister ? "Oldin kirganmisiz?" : "Birinchi marta kelyapsizmi?"}{" "}
           <Link className="font-medium text-[#17201b]" href={isRegister ? "/login" : "/register"}>
-            {isRegister ? "Kirish" : "Ro'yxatdan o'tish"}
+            {isRegister ? "Kirish" : "Tez boshlash"}
           </Link>
         </p>
       </section>
     </main>
   );
+}
+
+function normalizeUsername(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
 }
 
 function AuthField({ label, value, onChange, type = "text" }: { label: string; value: string; type?: string; onChange: (value: string) => void }) {
